@@ -1,0 +1,135 @@
+---
+title: "Life, Wealth, and Growth: Unveiling Global Dynamics with Data"
+author: "Aaron Foley"
+format:
+  html:
+    toc: true
+    highlight-style: github
+    code-line-numbers: true
+    toc-title: Table of Contents
+    fig-height: 5
+    fig-width: 7
+    embed-resources: true
+
+editor: visual
+execute: 
+  warning: false
+  error: false
+  freeze: auto
+---
+
+# Introduction
+
+Welcome to "***Life***, ***Wealth***, and ***Growth***: Unveiling Global Dynamics with Data. In this immersive journey, we illuminate the intricate connections between `life expectancy,` `GDP per capita`, and `population dynamics` across the globe, offering a nuanced perspective on global development.
+
+# Data Preparation
+
+```{r}
+## library packages
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(tidyverse)
+library(maps)
+
+## Data reading
+main_data <- read_csv('unicef_metadata.csv')
+indicator_data <- read_csv('unicef_indicator_2.csv')
+
+## Data preparation
+main_data <- na.omit(main_data)
+indicator_data <- indicator_data %>% 
+  select(time_period, indicator, obs_value)
+indicator_data <- na.omit(indicator_data)
+
+## data combination
+combined_data <- cbind(main_data[1:3301, ], indicator_data)
+```
+
+Below are steps involved in data preparation:
+
+1.  Data preparation began by first calling into R relevant packages to be used in cleaning and tidying the datasets.
+
+2.  Reading datasets into R.
+
+3.  Check and remove missing values.
+
+4.  Filter relevant data to be used.
+
+5.  Combine the data.
+
+# Data Visualization
+
+## Bar charts
+
+```{r}
+combined_data %>% 
+  ggplot() +
+  geom_col(aes(x=year, y=`Population, total`, fill=indicator)) +
+  labs(y='Total population', title='Population growth over the period of 1960-2022') +
+  theme(legend.position='none')
+```
+
+-   The figure above represents total population across the period 1960 to 2022.
+
+-   The population has been growing since 1960.
+
+-   This is an indication that measures that have been put in place to ensure population growth are working.
+
+```{r}
+combined_data %>% 
+  ggplot() +
+  geom_col(aes(x=year, y=obs_value, fill=indicator)) +
+  labs(y='Number of children', title='Estimated number of children (aged 0-17 years)',
+       subtitle='who have lost one or both parents due to all causes') +
+  theme(legend.position='top')
+```
+
+The bar graph above shows estimated number of children who have lost either of both parents due to all causes across the years of study. The numbers are low except in the years around 1980 where a huge spike of number of children was observed.
+
+## A world map
+
+```{r}
+world <- map_data("world")
+world_map <- merge(world, combined_data, by.x = "region", by.y = "country", all.x = TRUE)
+ggplot(data = world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = obs_value), color = "gray") +
+  scale_fill_gradient(low = "green", high = "black") +
+  labs(title = "Estimated number of children who have lost either of both parents", fill = "Number of children")
+```
+
+As you enter the dashboard, a world map unfolds before you, alive with a spectrum of shades that symbolize various aspects of human development. Regions glowing with vitality showcase high life expectancy and robust economic prosperity, highlighting success stories of developed nations. Conversely, areas facing challenges in healthcare and wealth distribution reveal disparities in well-being and economic stability. Zooming into specific countries unveils diverse trajectories of progress and ongoing efforts toward equitable development.
+
+## Time series plot
+
+```{r}
+combined_data |> 
+  ggplot(aes(x=time_period, y=obs_value, color=country)) +
+  geom_line() +
+  labs(x='Year', title='Estimated number of children who have lost either of both parents') +
+  theme(legend.position='none')
+```
+
+The chart above displays estimated number of children who have lost either of both parents due to all causes. The time series is on the lowest value and rises ambiguously around 2005. This indicates a possibility of a catastrophic event that took place around that year to claim lives of parents that high. Overall, the number of estimated children who have lost one or both parents is low.
+
+## Scatter charts
+
+```{r}
+combined_data |> 
+  ggplot(aes(x=`GDP per capita (constant 2015 US$)`, y=obs_value)) +
+  geom_point() +
+  geom_smooth(method='lm', se=FALSE) +
+  labs(title='Relationship between number of children in question and GDP per capita')
+```
+
+The scatter plot above shows relationship between number of children in question and GDP per capita. From the scatter plot, there is no statistical evidence enough to prove that in deed there is a significant relationship between the two.
+
+```{r}
+combined_data |> 
+  ggplot(aes(x=`GDP per capita (constant 2015 US$)`, y=`Life expectancy at birth, total (years)`)) +
+  geom_point() +
+  geom_smooth(method='lm', se=FALSE) +
+  labs(title='Relationship between Life expectancy and GDP per Capita')
+```
+
+On this other hand, there appears to be a significant relationship between Life expectancy and GDP per Capita. This is an almost positive linear relationship. This is because, life expectancy at birth increases with an increase in GDP per capita.
